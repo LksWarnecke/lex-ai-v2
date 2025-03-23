@@ -1,0 +1,13 @@
+#backend requirements
+fastapi
+uvicorn
+pydantic
+PyMuPDF
+llama-index
+langchain
+openai
+tiktoken
+
+#frontend requirements
+streamlit
+requests

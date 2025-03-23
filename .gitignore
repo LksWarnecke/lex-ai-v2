@@ -1,0 +1,50 @@
+# Ignore virtual environment
+venv/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore IDE/editor specific files (if you use VS Code or PyCharm, for example)
+.vscode/
+.idea/
+
+# Ignore other system files
+.DS_Store
+Thumbs.db
+
+# Ignore the environment-specific settings file (optional)
+.env
+.env.*
+
+# Ignore log files
+*.log
+
+# Ignore database files (optional)
+*.sqlite3
+
+# Ignore cache directories
+.cache/
+
+# Ignore streamlit configuration and session state files
+.streamlit/
+
+# Ignore pyenv files (if using pyenv)
+.python-version
+
+#backend requirements
+fastapi
+uvicorn
+pydantic
+PyMuPDF
+llama-index
+langchain
+langchain-community
+openai
+tiktoken
+
+#frontend requirements
+streamlit
+requests
