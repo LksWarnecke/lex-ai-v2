@@ -6,6 +6,10 @@ BACKEND_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(page_title="Rental Contract AI", layout="wide")
 
+# Initialize session state for chat history
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
 # Title
 st.title("🏠 Rental Contract AI")
 
@@ -38,12 +42,53 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    response = requests.get(f"{BACKEND_URL}/chat/", params={"user_message": user_input})
+    # 🔄 Send request to chat endpoint
+    response = requests.post(f"{BACKEND_URL}/chat/", json={"user_message": user_input})
     
     if response.status_code == 200:
         ai_response = response.json().get("ai_response", "Error retrieving response.")
         st.session_state.chat_history.append({"role": "assistant", "text": ai_response})
         with st.chat_message("assistant"):
             st.write(ai_response)
+    else:
+        st.error(f"❌ Error: {response.text}")
+
+# New Section for Evidence Upload (Image Upload)
+st.header("📸 Upload Evidence (Image)")
+uploaded_image = st.file_uploader("Upload an image for evidence", type=["jpg", "jpeg", "png", "bmp"])
+
+if uploaded_image is not None:
+    with st.spinner("Uploading and analyzing evidence..."):
+        files = {"file": uploaded_image.getvalue()}
+        response = requests.post(f"{BACKEND_URL}/upload-evidence/", files=files)
+
+    if response.status_code == 200:
+        matched_clauses = response.json().get("matched_clauses", [])
+        if matched_clauses:
+            st.success("✅ Evidence processed and matched with clauses!")
+            st.subheader("Matched Clauses:")
+            for match in matched_clauses:
+                st.write(f"**Clause {match['clause_number']}:** {match['clause_text']}")
+                if match['matched']:
+                    st.markdown("**Status:** Matched ✔️")
+                else:
+                    st.markdown("**Status:** Not Matched ❌")
+        else:
+            st.error("❌ No matching clauses found.")
+    else:
+        st.error(f"❌ Error: {response.text}")
+
+# 📝 Generate Formal Letter Section
+st.header("📜 Generate Formal Letter")
+
+if st.button("Generate Letter"):
+    with st.spinner("Generating letter..."):
+        response = requests.post(f"{BACKEND_URL}/generate-letter/")
+
+    if response.status_code == 200:
+        letter_text = response.json().get("letter", "Error generating letter.")
+        st.success("✅ Letter generated successfully!")
+        st.subheader("📜 Generated Letter:")
+        st.write(letter_text)
     else:
         st.error(f"❌ Error: {response.text}")

@@ -5,6 +5,7 @@ pydantic
 PyMuPDF
 llama-index
 langchain
+langchain-community
 openai
 tiktoken
 

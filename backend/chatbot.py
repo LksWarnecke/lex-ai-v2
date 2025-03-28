@@ -4,8 +4,9 @@ from llama_index.llms import OpenAI
 from typing import List
 import os
 import openai
+from config import OPENAI_API_KEY
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 # Initialize the LLM model (for simplicity using OpenAI model here, but can be replaced)
 from langchain.llms import OpenAI
