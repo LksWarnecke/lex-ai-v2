@@ -6,6 +6,8 @@ import os
 import openai
 from config import OPENAI_API_KEY
 
+#test change
+
 openai.api_key = OPENAI_API_KEY
 
 # Initialize the LLM model (for simplicity using OpenAI model here, but can be replaced)

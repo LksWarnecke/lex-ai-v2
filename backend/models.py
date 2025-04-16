@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+#test change
+
 class Contract(BaseModel):
     """Model to represent the uploaded contract."""
     file_name: str

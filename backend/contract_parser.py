@@ -4,6 +4,8 @@ from llama_index.core import Document
 from llama_index.core import VectorStoreIndex
 from typing import List
 
+#test change
+
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Extracts raw text from a PDF contract."""
     doc = fitz.open(pdf_path)
