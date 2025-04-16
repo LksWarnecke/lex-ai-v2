@@ -7,9 +7,9 @@ from langchain_openai import ChatOpenAI
 from llama_index.core import VectorStoreIndex, Document
 from llama_index.core.settings import Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.query_engine import RetrieverQueryEngine
 from contract_parser import extract_text_from_pdf, split_into_clauses, preprocess_clauses
 
-#test change
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -40,11 +40,12 @@ index = None
 contract_text = ""
 clauses = []
 
-def build_rag_index(text: str):
-    """Creates an index of the contract for retrieval-based Q&A."""
+# Store clauses with metadata and index them
+def build_rag_index(clauses_list):
+    """Creates an index of the contract clauses for retrieval-based Q&A."""
     global index
-    document = Document(text=text)
-    index = VectorStoreIndex.from_documents([document])
+    documents = [Document(text=clause, metadata={"clause_id": i + 1}) for i, clause in enumerate(clauses_list)]
+    index = VectorStoreIndex.from_documents(documents)
 
 @app.post("/upload-contract/")
 async def upload_contract(file: UploadFile = File(...)):
@@ -53,12 +54,12 @@ async def upload_contract(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
+
     contract_text = extract_text_from_pdf(file_path)
     clauses = split_into_clauses(contract_text)
     clauses = preprocess_clauses(clauses)
-    build_rag_index(contract_text)
-    
+    build_rag_index(clauses)
+
     return {"message": "Contract uploaded and analyzed successfully."}
 
 @app.post("/upload-evidence/")
@@ -94,14 +95,26 @@ async def chat_with_ai(request: dict = Body(...)):
     if not user_message:
         raise HTTPException(status_code=400, detail="User message is missing.")
 
-    query_engine = index.as_query_engine()
+    query_engine = index.as_query_engine(response_mode="compact")
     response = query_engine.query(user_message)
 
-    # Store conversation history
-    chat_history.append({"role": "user", "text": user_message})
-    chat_history.append({"role": "assistant", "text": response.response})
+    # Extract matching source clause(s)
+    sources = []
+    for node in response.source_nodes:
+        clause_id = node.metadata.get("clause_id", "N/A")
+        clause_text = node.text.strip()
+        sources.append(f'Clause {clause_id}: "{clause_text}"')
 
-    return {"ai_response": response.response}
+    sources_text = "\n".join(sources) if sources else "No specific clause found."
+
+    # Format AI's final response
+    formatted_response = f"Answer: {response.response.strip()}\n\nSource:\n{sources_text}"
+
+    # Append to chat history (user question and assistant's response)
+    chat_history.append({"role": "user", "text": user_message})
+    chat_history.append({"role": "assistant", "text": formatted_response})
+
+    return {"ai_response": formatted_response}
 
 @app.post("/generate-letter/", response_model=dict)
 async def generate_letter():
@@ -111,15 +124,26 @@ async def generate_letter():
     if not contract_text:
         raise HTTPException(status_code=400, detail="No contract uploaded.")
 
+    # Extract just the clean dialogue without clause sources
+    cleaned_history = []
+    for msg in chat_history:
+        if msg["role"] == "user":
+            cleaned_history.append(f"User: {msg['text']}")
+        elif msg["role"] == "assistant":
+            answer_only = msg["text"].split("\n\nSource:")[0].strip()
+            cleaned_history.append(f"Assistant: {answer_only}")
+
+    formatted_history = "\n".join(cleaned_history)
+
     prompt = f"""
     Based on the following conversation between a tenant and an AI assistant,
     generate a formal letter addressing the landlord about the concerns raised.
-    
-    Contract details:
+
+    Contract details (excerpt):
     {contract_text[:1000]}  # Limit contract text for efficiency
-    
+
     Conversation:
-    {chat_history}
+    {formatted_history}
 
     The letter should be concise, professional, and clearly state the concerns and requests.
     """
@@ -127,7 +151,6 @@ async def generate_letter():
     letter_response = chatbot.invoke(prompt)
 
     return {"letter": letter_response}
-
 
 @app.get("/")
 def read_root():

@@ -1,8 +1,6 @@
 import streamlit as st
 import requests
 
-#test change
-
 # Backend URL
 BACKEND_URL = "http://127.0.0.1:8000"
 
@@ -44,11 +42,12 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    # 🔄 Send request to chat endpoint
+    # Send request to chat endpoint
     response = requests.post(f"{BACKEND_URL}/chat/", json={"user_message": user_input})
     
     if response.status_code == 200:
         ai_response = response.json().get("ai_response", "Error retrieving response.")
+        st.session_state.chat_history.append({"role": "user", "text": user_input})
         st.session_state.chat_history.append({"role": "assistant", "text": ai_response})
         with st.chat_message("assistant"):
             st.write(ai_response)
