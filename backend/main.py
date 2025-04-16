@@ -9,6 +9,7 @@ from llama_index.core.settings import Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
 from contract_parser import extract_text_from_pdf, split_into_clauses, preprocess_clauses
 
+#test change
 # Initialize FastAPI app
 app = FastAPI()
 
