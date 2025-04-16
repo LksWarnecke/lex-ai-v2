@@ -90,7 +90,7 @@ async def chat_with_ai(request: dict = Body(...)):
     """Chats with the AI using the uploaded contract."""
     if not index:
         raise HTTPException(status_code=400, detail="No contract uploaded.")
-    
+
     user_message = request.get("user_message")
     if not user_message:
         raise HTTPException(status_code=400, detail="User message is missing.")
@@ -143,6 +143,34 @@ async def generate_letter():
     {contract_text[:1000]}  # Limit contract text for efficiency
 
     Conversation:
+    {formatted_history}
+
+    The letter should be concise, professional, and clearly state the concerns and requests.
+    """
+
+    letter_response = chatbot.invoke(prompt)
+
+    return {"letter": letter_response}
+
+# ✅ NEW ENDPOINT: Generate letter from selected chat history
+@app.post("/generate-letter-from-selection/", response_model=dict)
+async def generate_letter_from_selection(selected_messages: list = Body(...)):
+    """Generates a letter from selected chat history items sent by the frontend."""
+    if not selected_messages:
+        raise HTTPException(status_code=400, detail="No selected messages provided.")
+    if not contract_text:
+        raise HTTPException(status_code=400, detail="No contract uploaded.")
+
+    formatted_history = "\n".join(selected_messages)
+
+    prompt = f"""
+    Based on the following conversation between a tenant and an AI assistant,
+    generate a formal letter addressing the landlord about the concerns raised.
+
+    Contract details (excerpt):
+    {contract_text[:1000]}  # Limit contract text for efficiency
+
+    Selected Conversation:
     {formatted_history}
 
     The letter should be concise, professional, and clearly state the concerns and requests.

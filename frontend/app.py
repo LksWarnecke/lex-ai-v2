@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 
+
+
 # Backend URL
 BACKEND_URL = "http://127.0.0.1:8000"
 
@@ -42,12 +44,11 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Send request to chat endpoint
+    # 🔄 Send request to chat endpoint
     response = requests.post(f"{BACKEND_URL}/chat/", json={"user_message": user_input})
     
     if response.status_code == 200:
         ai_response = response.json().get("ai_response", "Error retrieving response.")
-        st.session_state.chat_history.append({"role": "user", "text": user_input})
         st.session_state.chat_history.append({"role": "assistant", "text": ai_response})
         with st.chat_message("assistant"):
             st.write(ai_response)
@@ -79,17 +80,34 @@ if uploaded_image is not None:
     else:
         st.error(f"❌ Error: {response.text}")
 
-# 📝 Generate Formal Letter Section
-st.header("📜 Generate Formal Letter")
+# 📝 Generate Formal Letter from Selected Messages
+st.header("📜 Generate Formal Letter (Select Messages)")
 
-if st.button("Generate Letter"):
-    with st.spinner("Generating letter..."):
-        response = requests.post(f"{BACKEND_URL}/generate-letter/")
+# Create a multiselect to let the user pick which chat history items to include
+chat_options = [
+    f"{msg['role'].capitalize()}: {msg['text'][:100]}..."  # truncate preview
+    for msg in st.session_state.chat_history
+]
+selected_indices = st.multiselect("Select messages to include in the letter:", options=list(range(len(chat_options))), format_func=lambda i: chat_options[i])
 
-    if response.status_code == 200:
-        letter_text = response.json().get("letter", "Error generating letter.")
-        st.success("✅ Letter generated successfully!")
-        st.subheader("📜 Generated Letter:")
-        st.write(letter_text)
+# Button to generate the letter from selected messages
+if st.button("Generate Letter from Selected"):
+    if not selected_indices:
+        st.warning("Please select at least one message.")
     else:
-        st.error(f"❌ Error: {response.text}")
+        # Collect selected message texts only
+        selected_messages = [st.session_state.chat_history[i]['text'] for i in selected_indices]
+
+        with st.spinner("Generating letter..."):
+            response = requests.post(
+                f"{BACKEND_URL}/generate-letter-from-selection/",
+                json=selected_messages
+            )
+
+        if response.status_code == 200:
+            letter_text = response.json().get("letter", "Error generating letter.")
+            st.success("✅ Letter generated successfully!")
+            st.subheader("📜 Generated Letter:")
+            st.write(letter_text)
+        else:
+            st.error(f"❌ Error: {response.text}")
