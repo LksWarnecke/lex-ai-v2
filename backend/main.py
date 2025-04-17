@@ -136,8 +136,10 @@ async def generate_letter():
     formatted_history = "\n".join(cleaned_history)
 
     prompt = f"""
-    Based on the following conversation between a tenant and an AI assistant,
-    generate a formal letter addressing the landlord about the concerns raised.
+    You are writing a formal letter from a tenant to a landlord regarding concerns found after reviewing a rental contract.
+    Do not mention anything about AI or an assistant in the letter.
+
+    Base the letter only on the concerns raised in the following conversation.
 
     Contract details (excerpt):
     {contract_text[:1000]}
@@ -163,8 +165,10 @@ async def generate_letter_from_selection(selected_messages: list = Body(...)):
     formatted_history = "\n".join(selected_messages)
 
     prompt = f"""
-    Based on the following conversation between a tenant and an AI assistant,
-    generate a formal letter addressing the landlord about the concerns raised.
+    You are writing a formal letter from a tenant to a landlord regarding concerns found after reviewing a rental contract.
+    Do not mention anything about AI or an assistant in the letter.
+
+    Base the letter only on the concerns raised in the following selected messages.
 
     Contract details (excerpt):
     {contract_text[:1000]}
