@@ -1,8 +1,6 @@
 import streamlit as st
 import requests
 
-
-
 # Backend URL
 BACKEND_URL = "http://127.0.0.1:8000"
 
@@ -43,6 +41,9 @@ user_input = st.text_input("Ask a question about your contract:")
 if user_input:
     with st.chat_message("user"):
         st.write(user_input)
+
+    # ✅ Add user message to local chat history
+    st.session_state.chat_history.append({"role": "user", "text": user_input})
 
     # 🔄 Send request to chat endpoint
     response = requests.post(f"{BACKEND_URL}/chat/", json={"user_message": user_input})

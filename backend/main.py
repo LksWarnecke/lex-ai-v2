@@ -140,7 +140,7 @@ async def generate_letter():
     generate a formal letter addressing the landlord about the concerns raised.
 
     Contract details (excerpt):
-    {contract_text[:1000]}  # Limit contract text for efficiency
+    {contract_text[:1000]}
 
     Conversation:
     {formatted_history}
@@ -150,9 +150,8 @@ async def generate_letter():
 
     letter_response = chatbot.invoke(prompt)
 
-    return {"letter": letter_response}
+    return {"letter": letter_response.content}
 
-# ✅ NEW ENDPOINT: Generate letter from selected chat history
 @app.post("/generate-letter-from-selection/", response_model=dict)
 async def generate_letter_from_selection(selected_messages: list = Body(...)):
     """Generates a letter from selected chat history items sent by the frontend."""
@@ -168,7 +167,7 @@ async def generate_letter_from_selection(selected_messages: list = Body(...)):
     generate a formal letter addressing the landlord about the concerns raised.
 
     Contract details (excerpt):
-    {contract_text[:1000]}  # Limit contract text for efficiency
+    {contract_text[:1000]}
 
     Selected Conversation:
     {formatted_history}
@@ -178,7 +177,7 @@ async def generate_letter_from_selection(selected_messages: list = Body(...)):
 
     letter_response = chatbot.invoke(prompt)
 
-    return {"letter": letter_response}
+    return {"letter": letter_response.content}
 
 @app.get("/")
 def read_root():
