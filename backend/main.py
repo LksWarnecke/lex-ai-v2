@@ -9,6 +9,7 @@ from llama_index.core.settings import Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.query_engine import RetrieverQueryEngine
 from contract_parser import extract_text_from_pdf, split_into_clauses, preprocess_clauses
+from pydantic import BaseModel
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -154,21 +155,33 @@ async def generate_letter():
 
     return {"letter": letter_response.content}
 
+class GenerateLetterRequest(BaseModel):
+    selected_messages: list
+    notes: list  # List of notes corresponding to the selected messages
+
 @app.post("/generate-letter-from-selection/", response_model=dict)
-async def generate_letter_from_selection(selected_messages: list = Body(...)):
-    """Generates a letter from selected chat history items sent by the frontend."""
+async def generate_letter_from_selection(request: GenerateLetterRequest):
+    """Generates a letter from selected chat history items sent by the frontend with optional notes."""
+    selected_messages = request.selected_messages
+    notes = request.notes
+    
     if not selected_messages:
         raise HTTPException(status_code=400, detail="No selected messages provided.")
     if not contract_text:
         raise HTTPException(status_code=400, detail="No contract uploaded.")
 
-    formatted_history = "\n".join(selected_messages)
+    # Combine selected messages and notes
+    conversation_with_notes = []
+    for msg, note in zip(selected_messages, notes):
+        conversation_with_notes.append(f"AI: {msg}\nNote: {note}")
+
+    formatted_history = "\n".join(conversation_with_notes)
 
     prompt = f"""
     You are writing a formal letter from a tenant to a landlord regarding concerns found after reviewing a rental contract.
     Do not mention anything about AI or an assistant in the letter.
 
-    Base the letter only on the concerns raised in the following selected messages.
+    Base the letter only on the concerns raised in the following selected messages with notes.
 
     Contract details (excerpt):
     {contract_text[:1000]}

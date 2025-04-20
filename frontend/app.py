@@ -84,26 +84,37 @@ if uploaded_image is not None:
 # 📝 Generate Formal Letter from Selected Messages
 st.header("📜 Generate Formal Letter (Select Messages)")
 
-# Create a multiselect to let the user pick which chat history items to include
-chat_options = [
-    f"{msg['role'].capitalize()}: {msg['text'][:100]}..."  # truncate preview
-    for msg in st.session_state.chat_history
-]
-selected_indices = st.multiselect("Select messages to include in the letter:", options=list(range(len(chat_options))), format_func=lambda i: chat_options[i])
+st.markdown("Select the messages from the chat history that you'd like to include in the formal letter, and optionally add notes for each response.")
+
+# Create checkboxes for each AI message with optional notes
+selected_messages = []
+notes = []
+for i, msg in enumerate(st.session_state.chat_history):
+    if msg["role"] == "assistant":
+        # Checkbox for selecting the message
+        label = f"**AI Response:** {msg['text'][:100]}..."  # Truncated preview
+        selected = st.checkbox(label, key=f"select_msg_{i}")
+        
+        if selected:
+            # If selected, also allow the user to input a note for this response
+            note = st.text_input(f"Add a note for AI message {i + 1}:", key=f"note_{i}")
+            selected_messages.append(msg['text'])  # Store selected message text
+            notes.append(note)  # Store the optional note
+        else:
+            notes.append("")  # Empty note if not selected
 
 # Button to generate the letter from selected messages
 if st.button("Generate Letter from Selected"):
-    if not selected_indices:
+    if not selected_messages:
         st.warning("Please select at least one message.")
     else:
-        # Collect selected message texts only
-        selected_messages = [st.session_state.chat_history[i]['text'] for i in selected_indices]
-
         with st.spinner("Generating letter..."):
-            response = requests.post(
-                f"{BACKEND_URL}/generate-letter-from-selection/",
-                json=selected_messages
-            )
+            # Send selected messages with notes to the backend
+            payload = {
+                "selected_messages": selected_messages,
+                "notes": notes
+            }
+            response = requests.post(f"{BACKEND_URL}/generate-letter-from-selection/", json=payload)
 
         if response.status_code == 200:
             letter_text = response.json().get("letter", "Error generating letter.")
